@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "ingest": "tsx src/correlation/engine.ts",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "npx tsx --test tests/*.test.ts"
   },
   "keywords": ["incident-response", "timeline", "correlation", "security", "soc", "siem"],
   "license": "MIT",
