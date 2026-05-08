@@ -1,0 +1,29 @@
+{
+  "name": "trace",
+  "version": "1.0.0",
+  "description": "Incident timeline correlation engine. Correlates IOCs, findings, and anomalies into unified incident timelines.",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "ingest": "tsx src/correlation/engine.ts",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": ["incident-response", "timeline", "correlation", "security", "soc", "siem"],
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.7.0",
+    "better-sqlite3": "^11.8.0",
+    "dotenv": "^16.4.0",
+    "node-fetch": "^3.3.0",
+    "@hono/node-server": "^1.13.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "@types/node": "^22.0.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "tsx": "^4.19.0"
+  }
+}
