@@ -91,3 +91,19 @@ Security tools generate isolated alerts. Trace connects them: an iris IOC become
 - [ ] Timeline rendering (Gantt-style)
 - [ ] Alert forwarding (email, Slack, PagerDuty)
 - [ ] STIX export
+
+## Ecosystem
+
+Part of the threat intelligence ecosystem. Trace is the top-level correlation layer that connects events from all other services into unified incident timelines:
+
+| Service | Port | Description |
+|---------|------|-------------|
+| [iris](https://github.com/makhembu/iris) | 3000 | IOC aggregation |
+| [sentry](https://github.com/makhembu/sentry) | 3001 | Detection rules |
+| [phishkit](https://github.com/makhembu/phishkit) | 3002 | Phishing analysis |
+| [packetwatch](https://github.com/makhembu/packetwatch) | 3003 | Anomaly detection |
+| **trace** | **3004** | **Incident correlation** |
+| [nexus](https://github.com/makhembu/nexus) | 3100 | Dashboard & gateway |
+
+Use `threat-stack.ps1` from the repo root to run all services: `.\threat-stack.ps1 start`
+

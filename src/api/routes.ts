@@ -110,6 +110,54 @@ api.post('/correlate', (c) => {
   return c.json({ message: 'Correlation complete', ...results });
 });
 
+api.post('/incidents', async (c) => {
+  const body = await c.req.json() as {
+    title: string;
+    description?: string;
+    severity: string;
+    status?: string;
+    eventIds?: string[];
+    tags?: string[];
+  };
+
+  if (!body.title || !body.severity) {
+    return c.json({ error: 'title and severity are required' }, 400);
+  }
+
+  const db = getDb();
+  const id = `inc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  const now = new Date().toISOString();
+
+  db.prepare(`
+    INSERT INTO incidents (id, title, description, severity, status, first_event_at, last_event_at, event_count, sources, tags, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    body.title,
+    body.description || '',
+    body.severity,
+    body.status || 'open',
+    now, now, 0, '[]',
+    JSON.stringify(body.tags || []),
+    now, now,
+  );
+
+  if (body.eventIds && body.eventIds.length > 0) {
+    for (const eid of body.eventIds) {
+      db.prepare('UPDATE events SET incident_id = ? WHERE id = ?').run(id, eid);
+    }
+    const count = (db.prepare('SELECT COUNT(*) as c FROM events WHERE incident_id = ?').get(id) as { c: number }).c;
+    const rows = db.prepare('SELECT DISTINCT source FROM events WHERE incident_id = ?').all(id) as { source: string }[];
+    const sources = JSON.stringify(rows.map(r => r.source));
+    const first = (db.prepare("SELECT occurred_at FROM events WHERE incident_id = ? ORDER BY occurred_at ASC LIMIT 1").get(id) as any)?.occurred_at || now;
+    const last = (db.prepare("SELECT occurred_at FROM events WHERE incident_id = ? ORDER BY occurred_at DESC LIMIT 1").get(id) as any)?.occurred_at || now;
+    db.prepare('UPDATE incidents SET event_count = ?, sources = ?, first_event_at = ?, last_event_at = ? WHERE id = ?').run(count, sources, first, last, id);
+  }
+
+  db.close();
+  return c.json({ id, title: body.title, severity: body.severity, status: body.status || 'open', event_count: body.eventIds?.length || 0 }, 201);
+});
+
 api.get('/incidents', (c) => {
   const db = getDb();
   const status = c.req.query('status');

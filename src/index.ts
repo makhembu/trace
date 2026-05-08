@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { serve } from '@hono/node-server';
 import { api } from './api/routes.js';
 import { initDb } from './db/init.js';
@@ -26,6 +27,7 @@ app.get('/', (c) => {
       ingestAll: 'POST /ingest/all',
       ingestSource: 'POST /ingest/:source',
       correlate: 'POST /correlate',
+      createIncident: 'POST /incidents { title, severity, description, eventIds, tags }',
       getIncidents: 'GET /incidents?status=&severity=',
       getIncident: 'GET /incidents/:id',
       updateIncident: 'PATCH /incidents/:id { status, title, description }',
