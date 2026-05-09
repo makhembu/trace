@@ -14,6 +14,33 @@ npm start
 # Server running at http://localhost:3004
 ```
 
+## Architecture
+
+```mermaid
+flowchart LR
+    Feeds["Threat Feeds"] --> Iris["iris<br/>IOC Aggregation<br/>Port 3000"]
+    Iris --> Sentry["sentry<br/>Port 3001"]
+    Iris --> PhishKit["phishkit<br/>Port 3002"]
+    Iris --> PacketWatch["packetwatch<br/>Port 3003"]
+    Sentry --> Trace["trace (this service)<br/>Incident Correlation<br/>Port 3004"]
+    PhishKit --> Trace
+    PacketWatch --> Trace
+    Trace --> Nexus["nexus<br/>Dashboard & Gateway<br/>Port 3100"]
+```
+
+trace is the top-level correlation layer — it ingests events from all four upstream services and groups them into unified incident timelines.
+
+## Docker
+
+```bash
+# Build and run standalone
+docker build -t trace .
+docker run -p 3004:3004 trace
+
+# Run the full ecosystem
+docker compose -f ../nexus/docker-compose.yml up
+```
+
 ## Ingest from Ecosystem
 
 ```bash

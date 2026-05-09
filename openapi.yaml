@@ -1,0 +1,215 @@
+openapi: "3.0.3"
+info:
+  title: Trace — Incident Timeline Correlation Engine
+  description: Correlates IOCs, detection findings, phishing reports, and network anomalies into unified incident timelines.
+  version: 1.0.0
+  contact:
+    name: makhembu
+    url: https://github.com/makhembu/trace
+
+servers:
+  - url: http://localhost:3004
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service status with event and incident counts
+
+  /events:
+    post:
+      summary: Ingest a single event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source, sourceEventId, eventType, title, occurred_at]
+              properties:
+                source:
+                  type: string
+                  enum: [iris, sentry, phishkit, packetwatch, manual]
+                sourceEventId: { type: string }
+                eventType: { type: string }
+                severity:
+                  type: string
+                  enum: [low, medium, high, critical]
+                title: { type: string }
+                description: { type: string }
+                sourceData: { type: object }
+                occurred_at: { type: string, format: date-time }
+                tags: { type: array, items: { type: string } }
+      responses:
+        "201":
+          description: Event created
+    get:
+      summary: List events
+      parameters:
+        - name: source
+          in: query
+          schema: { type: string, enum: [iris, sentry, phishkit, packetwatch, manual] }
+        - name: severity
+          in: query
+          schema: { type: string, enum: [low, medium, high, critical] }
+        - name: incidentId
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 100, maximum: 1000 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Paginated event list
+
+  /events/batch:
+    post:
+      summary: Batch ingest events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  items:
+                    type: object
+                    required: [source, sourceEventId, eventType, title, occurred_at]
+                    properties:
+                      source: { type: string }
+                      sourceEventId: { type: string }
+                      eventType: { type: string }
+                      severity: { type: string }
+                      title: { type: string }
+                      description: { type: string }
+                      sourceData: { type: object }
+                      occurred_at: { type: string, format: date-time }
+                      tags: { type: array, items: { type: string } }
+      responses:
+        "201":
+          description: Events ingested with count
+
+  /ingest/all:
+    post:
+      summary: Ingest events from all ecosystem sources
+      responses:
+        "200":
+          description: Ingestion results per source
+
+  /ingest/{source}:
+    post:
+      summary: Ingest events from a specific source
+      parameters:
+        - name: source
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [iris, sentry, phishkit, packetwatch]
+      responses:
+        "200":
+          description: Source ingested with event count
+        "400":
+          description: Unknown source
+
+  /correlate:
+    post:
+      summary: Run correlation engine to group events into incidents
+      responses:
+        "200":
+          description: Correlation results with incident and event counts
+
+  /incidents:
+    post:
+      summary: Create a manual incident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, severity]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                severity: { type: string }
+                status: { type: string, default: open }
+                eventIds: { type: array, items: { type: string } }
+                tags: { type: array, items: { type: string } }
+      responses:
+        "201":
+          description: Incident created
+    get:
+      summary: List incidents
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: severity
+          in: query
+          schema: { type: string, enum: [low, medium, high, critical] }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 500 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Paginated incident list
+
+  /incidents/{id}:
+    get:
+      summary: Get incident with its events
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Incident with associated events
+        "404":
+          description: Incident not found
+    patch:
+      summary: Update incident fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string }
+                title: { type: string }
+                description: { type: string }
+      responses:
+        "200":
+          description: Incident updated
+
+  /export:
+    get:
+      summary: Export timeline JSON
+      responses:
+        "200":
+          description: Complete incident and event timeline
+
+  /dashboard:
+    get:
+      summary: Dashboard summary
+      responses:
+        "200":
+          description: Aggregated event and incident statistics
